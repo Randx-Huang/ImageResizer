@@ -3,10 +3,11 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace ImageResizer
 {
-    public class ImageProcess
+    public partial class ImageProcess
     {
         /// <summary>
         /// 清空目的目錄下的所有檔案與目錄
@@ -17,27 +18,16 @@ namespace ImageResizer
             if (!Directory.Exists(destPath))
             {
                 Directory.CreateDirectory(destPath);
+                return;
             }
-            else
-            {
-                var allImageFiles = Directory.GetFiles(destPath, "*", SearchOption.AllDirectories);
-
-                foreach (var item in allImageFiles)
-                {
-                    File.Delete(item);
-                }
-            }
+            var allImageFiles = Directory.GetFiles(destPath, "*", SearchOption.AllDirectories);
+            Parallel.ForEach(allImageFiles, item => { File.Delete(item); });
         }
 
-        /// <summary>
-        /// 進行圖片的縮放作業
-        /// </summary>
-        /// <param name="sourcePath">圖片來源目錄路徑</param>
-        /// <param name="destPath">產生圖片目的目錄路徑</param>
-        /// <param name="scale">縮放比例</param>
         public void ResizeImages(string sourcePath, string destPath, double scale)
         {
             var allFiles = FindImages(sourcePath);
+
             foreach (var filePath in allFiles)
             {
                 Image imgPhoto = Image.FromFile(filePath);
@@ -56,6 +46,7 @@ namespace ImageResizer
                 string destFile = Path.Combine(destPath, imgName + ".jpg");
                 processedImage.Save(destFile, ImageFormat.Jpeg);
             }
+
         }
 
         /// <summary>
@@ -65,7 +56,7 @@ namespace ImageResizer
         /// <returns></returns>
         public List<string> FindImages(string srcPath)
         {
-            List<string> files = new List<string>();
+            var files = new List<string>();
             files.AddRange(Directory.GetFiles(srcPath, "*.png", SearchOption.AllDirectories));
             files.AddRange(Directory.GetFiles(srcPath, "*.jpg", SearchOption.AllDirectories));
             files.AddRange(Directory.GetFiles(srcPath, "*.jpeg", SearchOption.AllDirectories));
@@ -84,7 +75,7 @@ namespace ImageResizer
         Bitmap processBitmap(Bitmap img, int srcWidth, int srcHeight, int newWidth, int newHeight)
         {
             Bitmap resizedbitmap = new Bitmap(newWidth, newHeight);
-            Graphics g = Graphics.FromImage(resizedbitmap);
+            var g = Graphics.FromImage(resizedbitmap);
             g.InterpolationMode = InterpolationMode.High;
             g.SmoothingMode = SmoothingMode.HighQuality;
             g.Clear(Color.Transparent);
